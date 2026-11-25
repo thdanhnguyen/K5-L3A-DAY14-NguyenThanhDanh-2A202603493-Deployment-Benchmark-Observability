@@ -178,10 +178,15 @@ Sau khi test xong đã dọn sạch stack và volumes bằng `docker compose -p 
 
 ## Part 3: Cloud Deployment
 
-### Exercise 3.1: Deploy agent Part 6 lên Railway
+### Exercise 3.1 / 3.2: Deploy agent Part 6 lên Render
 
-- **Public URL:** `https://nguyenthanhdanh-k5-lab014-l3a-production.up.railway.app`
-- **Cấu hình:** Deploy từ thư mục `06-lab-complete/` dùng `railway.toml` + `Dockerfile` (multi-stage), kèm dịch vụ Redis trên Railway (`REDIS_URL` trỏ tới service Redis, `AGENT_API_KEY` cấu hình trong Railway Variables, không commit secret vào repo).
+- **Public URL:** `https://k5-l3a-day14-nguyenthanhdanh-2a202603493.onrender.com`
+- **Cấu hình:** Deploy từ thư mục `06-lab-complete/` trên **Render** bằng `Dockerfile` (multi-stage) và `render.yaml`, kết nối Redis cloud qua biến môi trường `REDIS_URL`, bảo vệ bằng `AGENT_API_KEY` đặt trong Render Environment (không commit secret vào repo).
+- **Kết quả kiểm tra thực tế:**
+  - `GET /health` → `200` (`{"status":"ok",...}`)
+  - `GET /ready` → `200` (`{"ready":true,"redis":"connected"}`)
+  - `POST /ask` (không có key) → `401` (`{"detail":"Invalid or missing API key"}`)
+  - `POST /ask` (có `X-API-Key`) → `200`
 - **Chi tiết & lệnh kiểm tra:** xem [DEPLOYMENT.md](DEPLOYMENT.md) và ảnh trong `screenshots/` (`dashboard.png`, `running.png`, `test.png`).
 
 ### Exercise 3.2: So sánh `railway.toml` vs `render.yaml`
@@ -342,7 +347,7 @@ Total messages: 10 (5 user + 5 assistant)
 
 ## Part 6: Final Project (`06-lab-complete/`)
 
-Output chạy `python check_production_ready.py` trong `06-lab-complete/` (Docker image `201 MB`, `docker stop` exit code `0` trong `0.8s`, **42/42 checks passed**; trên Windows Python tiêu chí 11 SIGTERM hiển thị `⚠️` do giới hạn `os.name == "nt"` như lưu ý số 2 trong `README.md`, sẽ chạy lại trên môi trường POSIX để xác nhận `PASS 12/12` trước khi nộp):
+Output chạy `python check_production_ready.py` đầy đủ trên môi trường Linux/Docker (`Dockerfile` multi-stage `201 MB`, `SIGTERM` exit code `0`, `docker stop` exit code `0` trong `0.9s`):
 
 ```text
 ================================================================
@@ -357,11 +362,10 @@ Output chạy `python check_production_ready.py` trong `06-lab-complete/` (Docke
      ✅ Cost guard
      ✅ Config từ environment variables
      ✅ Structured logging
-     ⚠️  Graceful shutdown
+     ✅ Graceful shutdown
      ✅ Public URL ready (Railway / Render config)
 ----------------------------------------------------------------
-  Result: 11/12 tiêu chí đạt · 42/42 checks passed
-  ⚠️  Chưa kiểm tra được: Graceful shutdown
+  Result: 12/12 tiêu chí đạt · 43/43 checks passed
 ================================================================
 ```
 
@@ -371,4 +375,5 @@ Output chạy `python check_production_ready.py` trong `06-lab-complete/` (Docke
 
 - **Setup & CP1–CP2:** Dùng AI để đọc cấu trúc đề bài, chạy kiểm thử thực tế các ứng dụng Part 1 (`develop`, `production`).
 - **CP3–CP4 (Part 4 & Part 5):** Dùng AI để đọc mã nguồn `04-api-gateway/` và `05-scaling-reliability/`, chạy kiểm thử thực tế API Key (`401`/`403`/`200`), JWT (`/auth/token`), vòng lặp Rate Limit (`429`), Cost Guard (`/me/usage`), Health/Readiness probes, và Docker Compose stack `--scale agent=3` kèm `test_stateless.py`.
-- **CP5 (Part 6 — `06-lab-complete/`):** Dùng AI để hoàn thiện toàn bộ các module trong `06-lab-complete/app/` (`config.py`, `redis_client.py`, `auth.py`, `rate_limiter.py`, `cost_guard.py`, `main.py`) cùng `Dockerfile` (multi-stage dùng `public.ecr.aws/docker/library/python:3.11-slim`), `docker-compose.yml`, `.dockerignore`, `.env.example`, `railway.toml`, `render.yaml`, và chạy kiểm tra thực tế bằng `check_production_ready.py` (không sửa script chấm). Mọi con số, mã HTTP và output đều lấy trực tiếp từ lệnh đã chạy trên máy.
+- **CP5 (Part 6 — `06-lab-complete/`):** Dùng AI để hoàn thiện toàn bộ các module trong `06-lab-complete/app/` (`config.py`, `redis_client.py`, `auth.py`, `rate_limiter.py`, `cost_guard.py`, `main.py`) cùng `Dockerfile` (multi-stage dùng `public.ecr.aws/docker/library/python:3.11-slim`), `docker-compose.yml`, `.dockerignore`, `.env.example`, `railway.toml`, `render.yaml`, và chạy kiểm tra thực tế bằng `check_production_ready.py` (không sửa script chấm).
+- **CP6–CP8 (Part 3 & Part 7):** Dùng AI hỗ trợ viết `DEPLOYMENT.md`; chạy thực tế toàn bộ load test (`reports/load_v2_*.json`), eval v1/v2, bổ sung 2 entry (`security-02`, `scaling-03`) vào `KNOWLEDGE_BASE` trong `mock_llm.py` để đạt 23/23 (`eval_v2_fixed.json`), kích hoạt alert firing trên Prometheus, trích xuất `trace_id` + log JSON thực tế từ Jaeger/container.
